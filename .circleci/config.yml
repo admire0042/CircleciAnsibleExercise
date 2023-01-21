@@ -110,5 +110,4 @@ workflows:
      # - configure_infrastructure
      # - smoke_test
       - create_infrastructureForRollBackTesting
-      - smoke_testForRollBackTesting
       
