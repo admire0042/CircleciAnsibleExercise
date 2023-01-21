@@ -5,6 +5,19 @@ orbs:
    welcome: circleci/welcome-orb@0.4.1
   # aws-cli: circleci/aws-cli@2.0.3
 # Define the jobs we want to run for this project
+
+commands:
+   # Exercise - Rollback
+   destroy_environment:
+     steps:
+       - run:
+           name: Destroy environment
+           # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
+           # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+           when: on_fail
+           command: |
+             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+
 jobs:
 
     # Exercise: Infrastructure Creation
@@ -22,6 +35,23 @@ jobs:
                 --template-file template.yml \
                 --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
                 --region us-east-1
+
+    
+  create_infrastructureForRollBackTesting:  # Choose any name, such as `build`
+      # The primary container, where your job's commands will run
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout # check out the code in the project directory
+        - run: 
+            name: Create Cloudformation Stack
+            command: |
+              aws cloudformation deploy \
+                --template-file template.yml \
+                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7} \
+                --region us-east-1
+
+    
 
 
 
@@ -65,6 +95,17 @@ jobs:
               else
                 return 1
               fi
+
+  # Exercise: Smoke Testing
+  smoke_testForRollBackTesting:
+      docker:
+        - image: alpine:latest
+      steps:
+        - run:
+            name: Test job
+            # Fail the job intentionally to simulate an error.
+            command:  return 1
+        - destroy_environment  
 # Sequential workflow
 workflows:
   # Name the workflow
@@ -72,5 +113,7 @@ workflows:
     jobs:
      # - create_infrastructure
      # - configure_infrastructure
-      - smoke_test
+     # - smoke_test
+      - create_infrastructureForRollBackTesting
+      - smoke_testForRollBackTesting
       
