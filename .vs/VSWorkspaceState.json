@@ -4,5 +4,6 @@
     "\\.circleci",
     "\\roles"
   ],
+  "SelectedNode": "\\bucket.yml",
   "PreviewInSolutionExplorer": false
 }
